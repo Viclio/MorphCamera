@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ===================================================================
+  MORPH CAMERA MANUAL
+  To update: see UPDATING.md next to this file. In short:
+  - Add-on version: change ONLY the addon-version meta tag below.
+  - New feature: copy a <section> block, give it a unique id and an <h2>.
+    Sub-topics are <h3 id="...">. The sidebar menu builds itself.
+  - Mark new things with data-since="x.y.z" on the <section> or <h3>.
+  - Images and films go in media/. Figure numbers are automatic.
+  - Add a line to the Version history section at the end.
+==================================================================== -->
+<meta name="addon-version" content="1.7.0">
+<title>Morph and Motion Cameras</title>
+<link rel="stylesheet" href="assets/manual.css">
+</head>
+<body>
+<button class="menu-btn" type="button">Menu</button>
+<div class="layout">
+
+<nav class="sidebar" aria-label="Contents">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M4 22 Q16 2 28 22" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="3 3"/>
+      <rect x="1" y="20" width="8" height="6" rx="1.5" fill="var(--ink)"/>
+      <rect x="23" y="20" width="8" height="6" rx="1.5" fill="var(--ink)"/>
+      <circle cx="16" cy="12" r="3.2" fill="var(--accent)"/>
+    </svg>
+    <span class="brand-name">Morph and Motion Cameras</span>
+  </div>
+  <p class="brand-version">Manual · add-on <span data-version></span></p>
+  <ul class="toc" id="toc"></ul>
+  <button class="theme-toggle" type="button">Light / dark</button>
+</nav>
+
+<main>
+<div class="content">
+
+<header class="hero">
+  <h1>Morph and Motion Cameras</h1>
+  <p>A camera that travels through a list of cameras, driven by a single Blend value, and a Motion Camera that makes any move feel hand-held.</p>
+  <div class="meta">
+    <span class="pill accent">Add-on <span data-version></span></span>
+    <span class="pill">Blender 4.2 or later</span>
+    <span class="pill">Morph Camera</span>
+    <span class="pill">Motion Camera</span>
+  </div>
+</header>
+
+<!-- =============================== GETTING STARTED =============================== -->
+
+<section id="introduction" data-part="Getting started">
+  <h2>Introduction</h2>
+  <p class="lead">You place ordinary cameras where you want the shot to go. The Morph Camera blends between them: <strong>Blend 0</strong> sits on the first camera, <strong>Blend 1</strong> on the last, and every value in between is a smooth move through the others.</p>
+  <p>Position, rotation and the lens settings (focal length, sensor size, focus distance, f-stop) are all blended. Animate the Blend value and you have a camera move; change a source camera and the move follows instantly.</p>
+  <figure>
+    <video src="media/film_intro.mp4" poster="media/poster_film_intro.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>A Motion Camera with Hands Dynamics (Dampen) following a Morph Camera through 6 cameras, with a 20-frame stop on each.</figcaption>
+  </figure>
+  <p>On top of that, the add-on can:</p>
+  <ul>
+    <li>write the Blend animation for you, in one move or with stops on each camera (<a href="#animate">Animate 0 → 1</a>, <a href="#staggered">Staggered</a>);</li>
+    <li>keep the horizon level (<a href="#stabilize">Stabilize</a>);</li>
+    <li>turn the result into an ordinary camera that works without the add-on (<a href="#bake">Bake</a>);</li>
+    <li>add a virtual camera operator on top, with footsteps, shake and body lag (<a href="#motion">Motion Camera</a>).</li>
+  </ul>
+</section>
+
+<section id="installation">
+  <h2>Installation</h2>
+  <ol class="steps">
+    <li>In Blender, open <span class="path">Edit › Preferences › Add-ons</span>, click the arrow at the top right and choose <span class="ui">Install from Disk…</span>. Pick <code>morph_camera-<span data-version></span>.zip</code>. You can also drag the zip file into the Blender window.</li>
+    <li>Make sure the add-on is enabled in the list.</li>
+    <li>In <span class="path">Preferences › Save &amp; Load</span>, turn on <span class="ui">Auto Run Python Scripts</span>.</li>
+  </ol>
+  <div class="callout warn">
+    <strong>Auto Run Python Scripts is required</strong>
+    <p>The Morph Camera is computed by Python drivers. When auto-run is off, Blender blocks them: the camera stays frozen and a warning appears in the header when you open a file. You can also allow them for one file with <span class="ui">Allow Execution</span> in that warning.</p>
+  </div>
+</section>
+
+<section id="quick-start">
+  <h2>Quick start</h2>
+  <ol class="steps">
+    <li>Put the cameras of your shot in their own collection, in the order the move should visit them.</li>
+    <li>In the 3D Viewport, choose <span class="path">Add › Camera › Morph Camera</span>.</li>
+    <li>In the dialog, pick that collection as <span class="ui">Source Collection</span> and an <span class="ui">Interpolation</span> (see <a href="#interpolation">Morph Interpolation</a>), then click <span class="ui">OK</span>.</li>
+    <li>A camera named <code>Morph Camera</code> is created, made the scene camera and selected. Its settings are in <span class="path">Properties › Object Data</span> (the green camera tab), panel <span class="ui">Morph Camera</span>.</li>
+    <li>Drag <span class="ui">Blend</span> to move along the cameras, or click <span class="ui">Animate 0 → 1</span> to animate it over the scene range.</li>
+  </ol>
+  <figure class="dialog">
+    <img src="media/dlg_create.png" alt="Morph Camera creation dialog with Source Collection and Interpolation">
+    <figcaption>The creation dialog. The collection needs at least 2 cameras.</figcaption>
+  </figure>
+</section>
+
+<!-- =============================== THE MORPH CAMERA =============================== -->
+
+<section id="panel" data-part="Morph Camera">
+  <h2>The Morph Camera panel</h2>
+  <div class="with-figure">
+    <div>
+      <p>Everything is in one panel, on the camera's <span class="ui">Object Data</span> tab. From top to bottom:</p>
+      <table>
+        <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Blend</td><td>Position along the cameras: 0 = first, 1 = last. <a href="#blend">More</a></td></tr>
+          <tr><td>Animate 0 → 1</td><td>Keys the Blend for one continuous move. <a href="#animate">More</a></td></tr>
+          <tr><td>Staggered</td><td>Keys the Blend with a stop on each camera. <a href="#staggered">More</a></td></tr>
+          <tr><td>Morph Interpolation</td><td>Shape of the path between cameras. <a href="#interpolation">More</a></td></tr>
+          <tr><td>Stabilize…</td><td>Removes the roll; optional object, axis and fade. <a href="#stabilize">More</a></td></tr>
+          <tr><td>Source Cameras, Order</td><td>The collection the cameras come from, and their order. <a href="#sources">More</a></td></tr>
+          <tr><td>Refresh Sources</td><td>Reads the collection again.</td></tr>
+          <tr><td>Camera list</td><td>Each camera with its Blend value; ▲▼ reorder.</td></tr>
+          <tr><td>Bake to Keyframes, Bake to Curve</td><td>Turn the result into a normal camera. <a href="#bake">More</a></td></tr>
+          <tr><td>Morph</td><td>Which lens settings are blended. <a href="#lens">More</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure>
+      <img src="media/ui_panel.png" alt="The Morph Camera panel in the Properties editor">
+      <figcaption>The panel for 6 source cameras.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="sources">
+  <h2>Source cameras</h2>
+  <p>The source cameras are read from the collection in <span class="ui">Source Cameras</span>, including its child collections. Other Morph Cameras and Motion Cameras in that collection are skipped, so a Morph Camera can never use itself.</p>
+  <ul>
+    <li><span class="ui">Order</span>: <strong>Collection Order</strong> keeps the order in which the cameras were linked to the collection; <strong>Name</strong> sorts them by name, with numbers in natural order (Camera_2 before Camera_10).</li>
+    <li><span class="ui">Refresh Sources</span>: click it after adding, removing or renaming cameras in the collection.</li>
+    <li><span class="ui">▲ ▼</span>: move one camera up or down in the list. The move changes immediately.</li>
+  </ul>
+  <p>The number in front of each camera is its Blend value. With <em>n</em> cameras, camera <em>k</em> (counting from 0) sits at <code>k / (n − 1)</code>: with 6 cameras, 0.0, 0.2, 0.4, 0.6, 0.8 and 1.0. The cameras are evenly spaced in Blend, whatever the distance between them.</p>
+  <div class="callout tip">
+    <strong>Source cameras stay live</strong>
+    <p>Move, rotate or animate a source camera and the Morph Camera follows immediately. You can even animate the source cameras themselves.</p>
+  </div>
+</section>
+
+<section id="blend">
+  <h2>Blend</h2>
+  <p><span class="ui">Blend</span> is the only value you animate. The slider runs from 0 to 1, but you can type values from −1 to 2: outside 0–1 the camera continues past the first or last camera along the same curve. This is what lets overshooting animations (Back, Elastic, Bounce) actually overshoot.</p>
+  <p>Key it like any property (hover and press <kbd>I</kbd>), or let <a href="#animate">Animate 0 → 1</a> and <a href="#staggered">Staggered</a> write the keys.</p>
+</section>
+
+<section id="interpolation" data-since="1.7.0">
+  <h2 data-toc="Morph Interpolation">Morph Interpolation</h2>
+  <p class="lead">Morph Interpolation decides the shape of the path between the cameras. It does not change the timing: that is the Blend animation's job.</p>
+  <figure>
+    <img src="media/interp_all.png" alt="The four interpolation paths through the source cameras">
+    <figcaption>The four paths through the same cameras. Camera_5 is far away, top right.
+      <span class="legend">
+        <span style="--c:#f2bf1a">Linear</span>
+        <span style="--c:#338cff">Cubic</span>
+        <span style="--c:#1acc59">Akima</span>
+        <span style="--c:#f23380">B-Spline</span>
+      </span>
+    </figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>Mode</th><th>Path</th><th>Passes through every camera</th></tr></thead>
+    <tbody>
+      <tr><td>Linear</td><td>Straight lines, sharp turns at each camera</td><td>Yes</td></tr>
+      <tr><td>Cubic</td><td>Natural cubic spline: smooth, can swing wide between cameras</td><td>Yes</td></tr>
+      <tr><td>Akima</td><td>Smooth, more local: less overshoot when cameras are unevenly spaced</td><td>Yes</td></tr>
+      <tr><td>B-Spline</td><td>The smoothest; cameras act as control points that pull the curve</td><td>First and last only</td></tr>
+    </tbody>
+  </table>
+  <div class="side">
+    <figure><img src="media/interp_linear.png" alt="Linear path"><figcaption>Linear.</figcaption></figure>
+    <figure><img src="media/interp_cubic.png" alt="Cubic path"><figcaption>Cubic.</figcaption></figure>
+    <figure><img src="media/interp_akima.png" alt="Akima path"><figcaption>Akima.</figcaption></figure>
+    <figure><img src="media/interp_bspline.png" alt="B-Spline path"><figcaption>B-Spline: it misses the middle cameras.</figcaption></figure>
+  </div>
+  <h3 id="bspline" data-since="1.7.0">B-Spline and exact stops</h3>
+  <p>With B-Spline the cameras are control points, not points on the path. The path starts on the first camera and ends on the last, but only passes <em>near</em> the others. The further a camera is from its neighbours, the further the path stays from it.</p>
+  <div class="with-figure">
+    <div>
+      <p>The panel shows a red note as a reminder: <em>Exact stops won't be respected in this mode</em>. A <a href="#staggered">Staggered</a> animation still stops at each camera's Blend value, but the camera holds near that camera rather than on it.</p>
+      <p>Use B-Spline for flowing moves where the cameras are guides. Use Cubic or Akima when the shot must frame exactly what each camera frames.</p>
+    </div>
+    <figure>
+      <img src="media/ui_panel_bspline_stab.png" alt="Panel with B-Spline selected and its warning">
+      <figcaption>B-Spline selected, with its warning (and Stabilize on).</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <video src="media/film_morph_interpolation.mp4" poster="media/poster_film_morph_interpolation.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>The same Staggered animation (hold 20 frames) with the four Morph Interpolations.</figcaption>
+  </figure>
+  <p>The rotation is blended the same way as the position, then rebuilt so the camera never rolls unexpectedly: the view direction is kept and the up direction is rebuilt from it.</p>
+</section>
+
+<section id="lens">
+  <h2>Lens settings (Morph)</h2>
+  <p>The <span class="ui">Morph</span> checkboxes at the bottom of the panel choose which camera settings are blended along with the position:</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Focal Length</td><td>On</td><td>Zooms smoothly between the cameras' focal lengths.</td></tr>
+      <tr><td>Sensor Size</td><td>On</td><td>Sensor width.</td></tr>
+      <tr><td>Focus Distance</td><td>On</td><td>Depth of field focus distance.</td></tr>
+      <tr><td>F-Stop</td><td>Off</td><td>Aperture. Turn it on if the cameras use different apertures.</td></tr>
+    </tbody>
+  </table>
+  <p>A setting that is off keeps the Morph Camera's own value. When focus distance or f-stop is blended, depth of field is turned on if any source camera uses it.</p>
+</section>
+
+<!-- =============================== ANIMATION =============================== -->
+
+<section id="animate" data-part="Animating the Blend">
+  <h2>Animate 0 → 1</h2>
+  <p class="lead">One click writes a single move from the first camera to the last: a key at Blend 0 on the start frame and a key at Blend 1 on the end frame.</p>
+  <div class="with-figure">
+    <div>
+      <table>
+        <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Frame Start, End</td><td>The move's range. Defaults to the scene range.</td></tr>
+          <tr><td>Interpolation</td><td>How the Blend moves between the two keys. <a href="#interp-keys">Choices</a></td></tr>
+          <tr><td>Smoothing</td><td>For Custom Bézier: how long the slow-in and slow-out last.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>It replaces the Blend animation</strong>
+        <p>Existing Blend keys are removed. Undo (<kbd>Ctrl</kbd> <kbd>Z</kbd>) restores them.</p>
+      </div>
+    </div>
+    <figure class="dialog">
+      <img src="media/dlg_animate.png" alt="Animate Blend 0 to 1 dialog">
+      <figcaption>The Animate dialog.</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <img src="media/graph_animate01.png" alt="Graph Editor: one smooth curve from 0 to 1">
+    <figcaption>The Blend curve in the Graph Editor: frames 1 to 250, Custom Bézier at 66%.</figcaption>
+  </figure>
+  <p>Because the cameras are evenly spaced in Blend, the camera spends the same time between each pair of cameras, whatever their distance. Far-apart cameras give fast moves; close cameras, slow ones. For full control of the rhythm, use <a href="#staggered">Staggered</a> or edit the keys in the Graph Editor.</p>
+</section>
+
+<section id="staggered">
+  <h2>Staggered animation</h2>
+  <p class="lead">Staggered writes one key per camera, so the move visits each camera in turn, with an optional stop (a <em>hold</em>) on each.</p>
+  <div class="with-figure">
+    <div>
+      <table>
+        <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Frame Start, End</td><td>The whole animation's range. Defaults to the scene range.</td></tr>
+          <tr><td>Hold Frames</td><td>How long the camera stays still on each camera. <a href="#hold">More</a></td></tr>
+          <tr><td>Hold First &amp; Last</td><td>Also hold on the first and last camera. <a href="#stops">More</a></td></tr>
+          <tr><td>Interpolation</td><td>How each move starts and ends. <a href="#interp-keys">More</a></td></tr>
+          <tr><td>Easing, Back, Amplitude, Period</td><td>Shown for the easing types. <a href="#easing">More</a></td></tr>
+          <tr><td>Smoothing</td><td>For Custom Bézier.</td></tr>
+          <tr><td>Whole Frames</td><td>Rounds every key to a whole frame (on by default).</td></tr>
+        </tbody>
+      </table>
+      <p>The box at the bottom of the dialog previews the result: number of cameras, number of keys and the length of each move.</p>
+    </div>
+    <figure class="dialog">
+      <img src="media/dlg_staggered.png" alt="Staggered Animation dialog">
+      <figcaption>6 cameras, 20-frame holds: 12 keys and 25.8 frames per move.</figcaption>
+    </figure>
+  </div>
+  <p>The time left after the holds is shared equally between the moves:</p>
+  <div class="formula">frames per move = (End − Start − Hold Frames × cameras that hold) ÷ (cameras − 1)</div>
+  <p>Example: frames 1–250, 6 cameras, 20-frame holds on all 6 → (249 − 120) ÷ 5 = 25.8 frames per move. If the holds leave no time to move, the dialog shows an error instead.</p>
+  <figure>
+    <img src="media/graph_staggered.png" alt="Graph Editor: a staircase of holds and smooth moves">
+    <figcaption>Staggered, hold 20, Hold First &amp; Last on, Custom Bézier 66%: flat steps are the holds.</figcaption>
+  </figure>
+
+  <h3 id="interp-keys">Interpolation</h3>
+  <p>The same choices as Blender's Graph Editor, plus the add-on's own Custom Bézier:</p>
+  <table>
+    <thead><tr><th>Interpolation</th><th>Effect on the camera</th></tr></thead>
+    <tbody>
+      <tr><td>Constant</td><td>No move: the camera cuts from one camera to the next.</td></tr>
+      <tr><td>Linear</td><td>Constant speed, abrupt starts and stops.</td></tr>
+      <tr><td>Bézier</td><td>Blender's default smooth curve (auto-clamped handles).</td></tr>
+      <tr><td>Custom Bézier</td><td>Slows into and out of every camera. <span class="ui">Smoothing</span> sets how long: 0% is almost linear, 100% is the longest ease.</td></tr>
+      <tr><td>Sinusoidal … Circular</td><td>Easing curves from the gentlest (Sinusoidal) to the strongest (Circular). <a href="#easing">Easing</a></td></tr>
+      <tr><td>Back, Bounce, Elastic</td><td>Dynamic effects: overshoot, bounce, spring.</td></tr>
+    </tbody>
+  </table>
+  <div class="stack">
+    <figure><img src="media/graph_interp_constant.png" alt="Constant interpolation curve"><figcaption>Constant: steps, the camera cuts.</figcaption></figure>
+    <figure><img src="media/graph_interp_linear.png" alt="Linear interpolation curve"><figcaption>Linear.</figcaption></figure>
+    <figure><img src="media/graph_interp_bezier.png" alt="Bezier interpolation curve"><figcaption>Bézier.</figcaption></figure>
+    <figure><img src="media/graph_interp_custom.png" alt="Custom Bezier interpolation curve"><figcaption>Custom Bézier 66%.</figcaption></figure>
+  </div>
+  <figure>
+    <video src="media/film_interpolation.mp4" poster="media/poster_film_interpolation.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>The four interpolations side by side, hold 20 frames.</figcaption>
+  </figure>
+  <div class="callout">
+    <strong>Holds always stay still</strong>
+    <p>Whatever the interpolation, a hold is kept perfectly flat, so Elastic or Back never wobble while the camera should be still.</p>
+  </div>
+
+  <h3 id="easing">Easing</h3>
+  <p>For the easing interpolations (Sinusoidal to Circular, Back, Bounce, Elastic), <span class="ui">Easing</span> says which end of each move gets the effect:</p>
+  <ul>
+    <li><strong>Ease In</strong>: at the start of each move. The camera leaves slowly and arrives fast.</li>
+    <li><strong>Ease Out</strong>: at the end. It leaves fast and settles slowly.</li>
+    <li><strong>Ease In and Out</strong>: at both ends.</li>
+    <li><strong>Automatic</strong>: Blender's choice for each type.</li>
+  </ul>
+  <p><span class="ui">Back</span> sets the overshoot of Back. <span class="ui">Amplitude</span> and <span class="ui">Period</span> shape Elastic's bounces.</p>
+  <div class="stack">
+    <figure><img src="media/graph_ease_in.png" alt="Quartic ease in"><figcaption>Quartic, Ease In.</figcaption></figure>
+    <figure><img src="media/graph_ease_out.png" alt="Quartic ease out"><figcaption>Quartic, Ease Out.</figcaption></figure>
+    <figure><img src="media/graph_ease_inout.png" alt="Quartic ease in and out"><figcaption>Quartic, Ease In and Out.</figcaption></figure>
+    <figure><img src="media/graph_ease_back_out.png" alt="Back ease out"><figcaption>Back, Ease Out: overshoots each camera, then settles.</figcaption></figure>
+  </div>
+  <figure class="dialog">
+    <img src="media/dlg_staggered_back.png" alt="Staggered dialog with Back and Ease Out">
+    <figcaption>Back and Ease Out in the dialog.</figcaption>
+  </figure>
+  <figure>
+    <video src="media/film_easing.mp4" poster="media/poster_film_easing.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>Quartic Ease In, Ease Out, Ease In and Out, and Back Ease Out.</figcaption>
+  </figure>
+
+  <h3 id="hold">Hold Frames</h3>
+  <p><span class="ui">Hold Frames</span> is the number of frames the camera stays still on each camera. The longer the holds, the shorter the moves, since the total range stays the same. At 0 the camera never stops; with Custom Bézier it only slows down as it passes each camera.</p>
+  <div class="stack">
+    <figure><img src="media/graph_hold_00.png" alt="Hold 0"><figcaption>Hold 0.</figcaption></figure>
+    <figure><img src="media/graph_hold_10.png" alt="Hold 10"><figcaption>Hold 10.</figcaption></figure>
+    <figure><img src="media/graph_hold_20.png" alt="Hold 20"><figcaption>Hold 20.</figcaption></figure>
+    <figure><img src="media/graph_hold_30.png" alt="Hold 30"><figcaption>Hold 30.</figcaption></figure>
+  </div>
+  <figure>
+    <video src="media/film_hold_frames.mp4" poster="media/poster_film_hold_frames.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>Hold 0, 10, 20 and 30 frames.</figcaption>
+  </figure>
+
+  <h3 id="stops">Stops: Hold First &amp; Last</h3>
+  <p>By default only the cameras in between hold: the animation starts moving on the first frame and is still moving until the last. Turn on <span class="ui">Hold First &amp; Last</span> to also hold on the first and last camera, for a shot that starts and ends still.</p>
+  <div class="stack">
+    <figure><img src="media/graph_stops_off.png" alt="Hold first and last off"><figcaption>Off: moves from frame 1 to 250.</figcaption></figure>
+    <figure><img src="media/graph_stops_on.png" alt="Hold first and last on"><figcaption>On: still at both ends.</figcaption></figure>
+  </div>
+  <figure>
+    <video src="media/film_stops.mp4" poster="media/poster_film_stops.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>Hold First &amp; Last off (left) and on (right).</figcaption>
+  </figure>
+</section>
+
+<!-- =============================== STABILIZE =============================== -->
+
+<section id="stabilize">
+  <h2>Stabilize</h2>
+  <p class="lead">Stabilize removes the roll (bank) of the Morph Camera, so the horizon stays level. The position and the direction the camera looks are unchanged.</p>
+  <p>It levels the camera everywhere, including on the source cameras: a source camera you tilted on purpose is shown level too.</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Stabilize</td><td>On: the camera is kept level with world Z, or with the Stabilizing Object.</td></tr>
+      <tr><td>Stabilizing Object</td><td>Optional. Its rotation defines "up"; its position is ignored. Rotate or animate it to tilt the horizon on purpose.</td></tr>
+      <tr><td>Up Axis</td><td>Which axis of the Stabilizing Object points up: Z for empties, Y for objects modelled with Y pointing up. Only used with a Stabilizing Object.</td></tr>
+      <tr><td>Fade Angle</td><td>0° to 45°, default 10°. <a href="#fade">More</a></td></tr>
+    </tbody>
+  </table>
+  <h3 id="stabilizing-object">Stabilizing Object</h3>
+  <p>Without an object, "up" is world Z. With one, "up" is the chosen axis of that object, so the horizon follows it. A Morph Camera cannot be used as Stabilizing Object.</p>
+  <figure>
+    <video src="media/film_stabilize_object.mp4" poster="media/poster_film_stabilize_object.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>Left: level with world Z. Right: Stabilizing Object, an empty rocking ±20°; the horizon rocks with it.</figcaption>
+  </figure>
+  <h3 id="fade">Fade Angle</h3>
+  <p>When the camera looks almost straight along "up" (straight down, for example), "level" no longer means anything, and a tiny change of direction would spin the camera. Within the Fade Angle of that direction, Stabilize fades out smoothly instead.</p>
+  <figure>
+    <video src="media/film_fade_angle.mp4" poster="media/poster_film_fade_angle.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>A path through a camera looking straight down. Left, Fade 0°: the camera whips round. Right, Fade 45°: smooth.</figcaption>
+  </figure>
+  <div class="callout tip">
+    <strong>When to raise it</strong>
+    <p>Keep the default 10° unless one of your cameras looks nearly straight up or down. Then raise it until the spin disappears.</p>
+  </div>
+</section>
+
+<!-- =============================== BAKE =============================== -->
+
+<section id="bake" data-part="Output">
+  <h2>Bake</h2>
+  <p class="lead">Baking turns the Morph Camera into an ordinary camera with keyframes. The baked camera plays at full speed, renders anywhere and needs neither the add-on nor Auto Run Python Scripts.</p>
+  <p>Baking plays the animation over the chosen range and records what the Morph Camera does. The new camera becomes the scene camera. Lens settings are only keyed if they actually change.</p>
+  <table>
+    <thead><tr><th>Option</th><th>Choices</th></tr></thead>
+    <tbody>
+      <tr><td>Frame Start, End</td><td>Defaults to the range of the Blend keys, or the scene range.</td></tr>
+      <tr><td>Rotation Keys</td><td><strong>At Stops</strong>: only where the camera sits on a source camera (both ends of each hold, plus first and last frame), smooth in between. <strong>Every Frame</strong>: an exact copy.</td></tr>
+      <tr><td>Lens Keys</td><td><strong>Every Frame</strong> (exact) or <strong>At Stops</strong> (lighter).</td></tr>
+      <tr><td>Rotation Mode</td><td><strong>Quaternion</strong>: no gimbal problems. <strong>Euler XYZ</strong>: easier to edit by hand.</td></tr>
+      <tr><td>Morph Camera</td><td>What happens to the original: <strong>Keep</strong>, <strong>Hide</strong> (default) or <strong>Delete</strong>.</td></tr>
+    </tbody>
+  </table>
+  <h3 id="bake-keyframes">Bake to Keyframes</h3>
+  <p>Creates <code>&lt;name&gt;_Baked</code>, with its location keyed on every frame and its rotation keyed at the stops.</p>
+  <figure class="dialog"><img src="media/dlg_bake_keys.png" alt="Bake to Keyframes dialog"><figcaption>Bake to Keyframes.</figcaption></figure>
+  <figure>
+    <img src="media/bake_keys_graph.png" alt="Baked camera keys in the Graph Editor">
+    <figcaption>A baked Staggered move: dense location keys (every frame) and sparse rotation keys (at the stops).</figcaption>
+  </figure>
+  <h3 id="bake-curve">Bake to Curve</h3>
+  <p>Creates a path curve, <code>&lt;name&gt;_Path</code>, and a camera, <code>&lt;name&gt;_OnPath</code>, that follows it with a Follow Path constraint. The curve is the morph path itself, so you can see and edit the route in the viewport.</p>
+  <ul>
+    <li><span class="ui">Path Resolution</span>: curve points between two cameras (32 by default).</li>
+    <li><span class="ui">Timing Keys</span>: the constraint's offset is keyed on <strong>Every Frame</strong> (exact timing) or <strong>At Stops</strong> (lighter, smooth in between).</li>
+  </ul>
+  <figure>
+    <img src="media/bake_curve_viewport.png" alt="Baked path curve through the source cameras">
+    <figcaption>The baked path (orange) through the source cameras, with the camera on it at frame 80. Cubic interpolation.</figcaption>
+  </figure>
+  <figure class="dialog"><img src="media/dlg_bake_curve.png" alt="Bake to Curve dialog"><figcaption>Bake to Curve.</figcaption></figure>
+  <figure><img src="media/bake_curve_graph.png" alt="Offset Factor curve"><figcaption>The Offset Factor, keyed on every frame: the flat parts are the holds; the steep last climb is the long trip to Camera_5.</figcaption></figure>
+</section>
+
+<!-- =============================== MOTION CAMERA =============================== -->
+
+<section id="motion" data-part="Motion Camera" data-since="1.5">
+  <h2 data-toc="What it does">Motion Camera</h2>
+  <p class="lead">The Motion Camera is a second camera that follows another object, its <strong>Base</strong>, as if a camera operator were carrying it: footsteps, head and hand movement, and the lag or bounce of a body following a move.</p>
+  <p>The Base can be a Morph Camera, any animated camera or object, or an empty created for it. The two tools stack: a Morph Camera plans the move, a Motion Camera on top of it makes it feel hand-held.</p>
+  <figure>
+    <video src="media/film_motion_presets.mp4" poster="media/poster_film_motion_presets.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>The four presets on top of the same Morph Camera move (Staggered, hold 20 frames).</figcaption>
+  </figure>
+  <h3 id="motion-rig">The virtual operator</h3>
+  <div class="with-figure">
+    <div>
+      <p>The camera hangs on a simple rig:</p>
+      <ul>
+        <li>a <strong>foot</strong> on the ground, under the Base;</li>
+        <li>a <strong>head</strong> 1.75 m above the foot;</li>
+        <li>the <strong>camera</strong>, held 25 cm to the right of the head and 35 cm in front of it.</li>
+      </ul>
+      <p>Each part can move on its own: footsteps move the foot, head rotation turns the head (which swings the camera on its arm), and the hands add their own shake. With every effect off, the camera sits exactly on the Base.</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 380 300" role="img" aria-label="The rig: foot, head 1.75 m above, camera 35 cm in front of the head" style="width:100%;background:var(--surface);border:1px solid var(--rule);border-radius:10px">
+        <line x1="30" y1="262" x2="350" y2="262" stroke="var(--ink-2)" stroke-width="1.5"/>
+        <text x="350" y="282" text-anchor="end" font-size="12" fill="var(--ink-2)">ground</text>
+        <line x1="150" y1="258" x2="150" y2="78" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="150" cy="258" r="7" fill="var(--accent)"/>
+        <text x="132" y="262" text-anchor="end" font-size="13" font-weight="600" fill="var(--ink)">Foot</text>
+        <circle cx="150" cy="66" r="15" fill="none" stroke="var(--ink)" stroke-width="3"/>
+        <text x="126" y="70" text-anchor="end" font-size="13" font-weight="600" fill="var(--ink)">Head</text>
+        <line x1="165" y1="70" x2="246" y2="70" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+        <rect x="246" y="56" width="40" height="28" rx="4" fill="var(--accent)"/>
+        <path d="M286 62 L306 52 L306 88 L286 78 Z" fill="var(--accent)"/>
+        <text x="266" y="110" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">Camera</text>
+        <line x1="190" y1="80" x2="190" y2="246" stroke="var(--ink-2)" stroke-dasharray="4 4"/>
+        <text x="198" y="170" font-size="12" fill="var(--ink-2)">1.75 m</text>
+        <text x="206" y="56" text-anchor="middle" font-size="12" fill="var(--ink-2)">35 cm forward</text>
+        <text x="266" y="128" text-anchor="middle" font-size="12" fill="var(--ink-2)">(+25 cm to the right)</text>
+      </svg>
+      <figcaption>Side view of the rig. The Base gives the camera's rest position; the foot and head are placed from it.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="motion-create">
+  <h2>Creating a Motion Camera</h2>
+  <ol class="steps">
+    <li>Select what the camera should follow: a Morph Camera, another camera or any object. Select nothing to start from scratch.</li>
+    <li>In the 3D Viewport, choose <span class="path">Add › Camera › Motion Camera</span>.</li>
+    <li>A camera named <code>Motion Camera</code> is created, made the scene camera and selected. Its settings are in <span class="path">Properties › Object Data</span>, panel <span class="ui">Motion Camera</span>.</li>
+  </ol>
+  <table>
+    <thead><tr><th>Selected</th><th>The Base becomes</th></tr></thead>
+    <tbody>
+      <tr><td>A camera (Morph Camera or not)</td><td>That camera. Its lens settings are copied to the new camera.</td></tr>
+      <tr><td>A Motion Camera</td><td>Its Base, so the new camera follows the same thing.</td></tr>
+      <tr><td>Any other object</td><td>That object.</td></tr>
+      <tr><td>Nothing</td><td>A new empty, <code>Motion Camera Base</code>, at the 3D cursor, looking along +Y and level. Animate it like a camera.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="motion-panel">
+  <h2>The Motion Camera panel</h2>
+  <div class="with-figure">
+    <div>
+      <p>The panel has three parts: the main settings, then the <a href="#motion-dynamics">Dynamics</a> and <a href="#motion-motion">Motion</a> sub-panels.</p>
+      <table>
+        <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Base</td><td>What the camera follows. A Motion Camera can't follow another Motion Camera.</td></tr>
+          <tr><td>Inherit Camera Parameters</td><td>When the Base is a camera: use its focal length, sensor size and focus distance (on by default). Greyed out for other objects.</td></tr>
+          <tr><td>Re-simulate</td><td>Recomputes the dynamics from the start frame. Normally automatic.</td></tr>
+          <tr><td>Bake to Keyframes</td><td>Turns the result into a normal camera. <a href="#motion-bake">More</a></td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>The Morph Camera panel is hidden</strong>
+        <p>A Motion Camera only shows its own panel. To change the move itself, select the Base.</p>
+      </div>
+    </div>
+    <figure>
+      <img src="media/ui_motion_1.png" alt="Motion Camera panel with Base, Inherit Camera Parameters and the Dynamics sub-panel">
+      <figcaption>The panel following a Morph Camera, with Head and Hands Dynamics on.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="motion-motion">
+  <h2 data-toc="Motion and presets">Motion: presets, footsteps and noise</h2>
+  <p class="lead">The Motion sub-panel holds everything that shakes the camera. It depends only on time, so you can scrub anywhere and the result is always the same.</p>
+  <h3 id="motion-presets">Presets</h3>
+  <div class="with-figure">
+    <div>
+      <table>
+        <thead><tr><th>Preset</th><th>Feel</th></tr></thead>
+        <tbody>
+          <tr><td>Calm</td><td>Barely-there breathing of a camera held very still.</td></tr>
+          <tr><td>Steady Cam</td><td>Floating stabilised rig: slow drift, soft steps.</td></tr>
+          <tr><td>Ego</td><td>First-person handheld while walking.</td></tr>
+          <tr><td>Frantic</td><td>Shaky, nervous handheld for action scenes.</td></tr>
+          <tr><td>Custom</td><td>Your own settings.</td></tr>
+        </tbody>
+      </table>
+      <p>A preset fills in the Footsteps and the three noise layers; it doesn't touch the Dynamics. Change any value and the menu switches to <strong>Custom</strong>, keeping the values.</p>
+      <div class="callout tip">
+        <strong>Your settings are kept</strong>
+        <p>Trying a preset doesn't lose your work: your own values are remembered when you leave Custom, and come back when you choose Custom again.</p>
+      </div>
+    </div>
+    <figure>
+      <img src="media/ui_motion_2.png" alt="Motion sub-panel with Preset, Footsteps and Head Rotation">
+      <figcaption>Preset Ego: Footsteps on, Head Rotation on.</figcaption>
+    </figure>
+  </div>
+  <p>Seen from behind the camera, the path it draws in 10 seconds while its Base stands still:</p>
+  <div class="side">
+    <figure><img src="media/trail_calm.png" alt="Calm trail"><figcaption>Calm: within 1 cm.</figcaption></figure>
+    <figure><img src="media/trail_steady.png" alt="Steady Cam trail"><figcaption>Steady Cam: about 2 cm.</figcaption></figure>
+    <figure><img src="media/trail_ego.png" alt="Ego trail"><figcaption>Ego: within 6 cm.</figcaption></figure>
+    <figure><img src="media/trail_frantic.png" alt="Frantic trail"><figcaption>Frantic: within 12 cm.</figcaption></figure>
+  </div>
+
+  <h3 id="motion-footsteps">Footsteps</h3>
+  <p>A walking rhythm on the foot: a sideways sway of 2 cm (one cycle every two steps), a 2.5 cm bob lowest at each step, and a small forward push.</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Intensity</td><td>0 = off (default). 1 = normal walk; up to 2 on the slider.</td></tr>
+      <tr><td>Scale X, Y, Z</td><td>Scales the sideways sway, the vertical bob and the forward push separately.</td></tr>
+      <tr><td>Frequency</td><td>Steps per second (1 by default).</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="motion-noise">Head Rotation, Camera Rotation, Camera Position</h3>
+  <p>Three layers of smooth random movement (fractal noise), each with the same settings:</p>
+  <ul>
+    <li><strong>Head Rotation</strong> turns the head. Because the camera is held in front of the head, it also moves the camera sideways: the most natural hand-held look. Off by default.</li>
+    <li><strong>Camera Rotation</strong> turns the camera itself: pitch (X), yaw (Y) and roll (Z). On by default, up to 2°.</li>
+    <li><strong>Camera Position</strong> shifts the camera itself. On by default, up to 5 cm.</li>
+  </ul>
+  <div class="with-figure">
+    <div>
+      <table>
+        <thead><tr><th>Setting</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Intensity</td><td>Multiplies the whole layer. 0 = off.</td></tr>
+          <tr><td>Max X, Y, Z</td><td>Largest deviation per axis: degrees for rotations, metres for position.</td></tr>
+          <tr><td>Frequency X, Y, Z</td><td>Speed of the movement per axis. Higher is faster and more nervous.</td></tr>
+          <tr><td>Octaves</td><td>Detail: each octave adds a finer, faster jitter on top (3 by default, up to 8).</td></tr>
+          <tr><td>DeSync</td><td>How independently the three axes move: 0 = all together, 1 (default) = independent.</td></tr>
+          <tr><td>Offset X, Y, Z</td><td>Shifts the random pattern. Give two Motion Cameras different offsets so they don't shake the same way.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure>
+      <img src="media/ui_motion_4.png" alt="Camera Rotation and Camera Position settings">
+      <figcaption>Camera Rotation and Camera Position.</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <video src="media/film_motion_layers.mp4" poster="media/poster_film_motion_layers.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>Each layer alone on a still camera: Footsteps, Head Rotation, Camera Rotation, Camera Position.</figcaption>
+  </figure>
+</section>
+
+<section id="motion-dynamics">
+  <h2>Dynamics</h2>
+  <p class="lead">Dynamics give the rig weight: when the Base moves, the foot, head and hands follow with a delay or a bounce instead of sticking to it.</p>
+  <p>Each of <strong>Foot</strong>, <strong>Head</strong> and <strong>Hands</strong> has its own switch and settings. They add up: the hands follow the head, which follows the foot.</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Dampen</th><th>Spring</th></tr></thead>
+    <tbody>
+      <tr><td>Mode</td><td>Lags behind and catches up smoothly.</td><td>Springs back and overshoots, like a sprung rig.</td></tr>
+      <tr><td>Damp Pos, Damp Rot</td><td>How strongly position and rotation lag. 0 = no lag.</td><td>How soft the spring is: higher is slower and wider.</td></tr>
+      <tr><td>Inertia Pos, Inertia Rot</td><td>How much momentum is kept: the camera drifts past the target.</td><td>How long the bouncing lasts.</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <video src="media/film_motion_dynamics.mp4" poster="media/poster_film_motion_dynamics.jpg" controls muted loop playsinline preload="metadata"></video>
+    <figcaption>The same move without dynamics, with Hands Dampen, with Hands Spring, and with Dampen on all three.</figcaption>
+  </figure>
+  <figure>
+    <img src="media/motion_bake_graph.png" alt="Baked Z location: smooth lagging curve">
+    <figcaption>The camera's height (baked) with Head and Hands Dampen: moves start late and end softly, and the Base's holds become slow drifts.</figcaption>
+  </figure>
+  <h3 id="motion-focus">Focus Dynamics</h3>
+  <p>The same idea for the focus distance: with a camera Base and <span class="ui">Inherit Camera Parameters</span> on, the focus follows the Base camera's focus distance with a lag (Dampen) or a bounce (Spring), like a focus puller catching up. It has a single <span class="ui">Damp</span> and <span class="ui">Inertia</span>.</p>
+  <h3 id="motion-simulation">How dynamics are computed</h3>
+  <p>Dynamics depend on what happened before, so they are simulated frame by frame from the scene's <strong>start frame</strong> and kept in memory. The first playback from the start does the work; scrubbing afterwards is instant.</p>
+  <ul>
+    <li>Any change of a setting, of the Base's animation or of the start frame re-simulates automatically.</li>
+    <li><span class="ui">Re-simulate</span> forces it if something looks out of date.</li>
+    <li>Before the start frame, the camera has no dynamics.</li>
+  </ul>
+</section>
+
+<section id="motion-base" data-since="1.6.0">
+  <h2 data-toc="Bases with constraints">Bases with constraints or drivers</h2>
+  <p class="lead">Any Base works, including one moved by constraints, drivers or an animated parent. The panel tells you when such a Base needs one extra step.</p>
+  <p>For a Morph Camera or a keyframed object, the Motion Camera computes the Base itself, frame by frame. A Base driven by constraints, drivers or an animated parent can't be computed that way, so the Motion Camera follows it through a <strong>Child Of</strong> constraint named <code>Motion Camera Base</code>, added and removed automatically. Don't delete it.</p>
+  <h3 id="motion-sample">Sample Base</h3>
+  <p>Without Dynamics there is nothing to do. With Dynamics, the simulation needs the Base's whole path, so a red box asks you to click <span class="ui">Sample Base</span>: the add-on plays through the scene range once and records where the Base goes. The Base itself is not changed.</p>
+  <div class="side">
+    <figure><img src="media/ui_motion_sample_needed.png" alt="Panel asking to sample the Base"><figcaption>Dynamics are on, the Base isn't sampled yet.</figcaption></figure>
+    <figure><img src="media/ui_motion_sampled.png" alt="Panel showing the Base is sampled"><figcaption>Sampled: frames 1–250. The round arrow samples again.</figcaption></figure>
+  </div>
+  <div class="callout warn">
+    <strong>Sample again after changing the Base</strong>
+    <p>If the Base's animation or the scene range changes, the box turns red again: <em>Base changed since it was sampled</em>. Bake samples again by itself; rendering does not, so check the panel before a render.</p>
+  </div>
+</section>
+
+<section id="motion-bake">
+  <h2 data-toc="Bake (Motion Camera)">Bake a Motion Camera</h2>
+  <p><span class="ui">Bake to Keyframes</span> plays the range and records the Motion Camera into a clean camera, <code>&lt;name&gt;_Baked</code>, keyed on every frame. It plays at full speed and renders anywhere, without the add-on.</p>
+  <table>
+    <thead><tr><th>Option</th><th>Choices</th></tr></thead>
+    <tbody>
+      <tr><td>Frame Start, End</td><td>Defaults to the scene range.</td></tr>
+      <tr><td>Rotation Mode</td><td><strong>Euler XYZ</strong> (default, easy to edit) or <strong>Quaternion</strong> (no gimbal flips).</td></tr>
+      <tr><td>Motion Camera</td><td>What happens to the original: <strong>Keep</strong>, <strong>Hide</strong> (default) or <strong>Delete</strong>.</td></tr>
+    </tbody>
+  </table>
+  <p>Lens settings are keyed only if they change. With a Base that needs sampling, the Base is sampled again first, so the bake always matches it.</p>
+</section>
+
+<!-- =============================== REFERENCE =============================== -->
+
+<section id="troubleshooting" data-part="Reference">
+  <h2>Troubleshooting</h2>
+  <table>
+    <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>The Morph Camera doesn't move</td><td>Auto Run Python Scripts is off: see <a href="#installation">Installation</a>, or click Allow Execution in the header warning.</td></tr>
+      <tr><td>A camera is missing from the list</td><td>Click Refresh Sources. Morph and Motion Cameras are never used as sources.</td></tr>
+      <tr><td>The order is wrong</td><td>Use ▲▼, or set Order to Name and name the cameras in sequence.</td></tr>
+      <tr><td>The move doesn't stop exactly on a camera</td><td>Morph Interpolation is B-Spline: use Cubic or Akima.</td></tr>
+      <tr><td>The camera spins when looking straight down</td><td>Raise Stabilize's Fade Angle.</td></tr>
+      <tr><td>Animate buttons are greyed out</td><td>The Morph Camera needs at least 2 source cameras.</td></tr>
+      <tr><td>Rendering on a farm or another computer</td><td>Bake the camera first: the baked camera needs nothing installed.</td></tr>
+      <tr><td>Motion Camera: red "Sample Base" box</td><td>The Base uses constraints or drivers and Dynamics are on: click Sample Base. <a href="#motion-sample">More</a></td></tr>
+      <tr><td>Motion Camera: the first playback is slow</td><td>Dynamics are being simulated from the start frame; afterwards they are cached.</td></tr>
+      <tr><td>Motion Camera: the preset changed to Custom</td><td>A value was edited. Your values are kept; choose a preset again to replace them.</td></tr>
+      <tr><td>Motion Camera: shake identical on two cameras</td><td>Give them different Offset values.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="history">
+  <h2>Version history</h2>
+  <dl class="changelog">
+    <dt>1.7.0</dt>
+    <dd>Morph Interpolation renamed: Soft 1 → Cubic, Soft 2 → Akima (existing files keep their setting). New B-Spline interpolation, with a warning that exact stops are not respected.</dd>
+    <dt>1.6.0</dt>
+    <dd>Motion Camera follows Bases with constraints, drivers or animated parents.</dd>
+    <dt>1.5</dt>
+    <dd>Motion Camera, presets and its bake. Smoothness fixes.</dd>
+    <dt>Earlier</dt>
+    <dd>Morph Camera with Linear, Soft 1 and Soft 2; Animate 0 → 1 and Staggered with interpolation choices; Bake to Keyframes and Bake to Curve; Stabilize with Stabilizing Object, Up Axis and Fade Angle; lens keys options.</dd>
+  </dl>
+</section>
+
+</div>
+</main>
+</div>
+<script src="assets/manual.js"></script>
+</body>
+</html>
