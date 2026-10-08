@@ -7,6 +7,6 @@ A Blender add-on (Blender 4.2 or later) with two cameras:
 
 ## Manual
 
-Read the manual online: https://viclio.github.io/morphcamera/
+Read the manual online: https://viclio.github.io/MorphCamera/
 
 Its source is in [`docs/`](docs/). See [`docs/UPDATING.md`](docs/UPDATING.md) to edit it.
