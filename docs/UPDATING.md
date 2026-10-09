@@ -86,14 +86,16 @@ Put files in `media/`, then:
 | `interp_` | Viewport: Morph Interpolation paths |
 | `graph_` | Graph Editor: Blend curves |
 | `bake_` | Bake results |
-| `film_` | Rendered example films (Workbench, 250 frames) |
+| `film_` | Rendered example films (Eevee, 250 frames) |
 | `trail_` | Viewport: Motion Camera trail around a still Base |
 | `motion_` | Motion Camera bake results |
 | `poster_` | First image shown on each film before it plays (frame 111) |
 
 The example films come from `P:\Blender\MorphCamDemo\Features\MorphCamDemo1_Features.blend`
-(cameras named `MCF_…`). Comparison films are single renders placed side by side.
-The Motion Camera films are rendered by `Features\run_motion.py` (one Blender run per film).
+(cameras named `MCF_…`), rendered with Eevee and the cartoon materials (`BLP_…`), with the
+frame number and a note burned in. Comparison films are single renders placed side by side.
+All the films are rendered by `Features\run_eevee.py <blender.exe>` (one Blender run per film,
+into `Features\parts_eevee`); delete a part there to render it again.
 
 ## Publishing
 
