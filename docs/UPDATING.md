@@ -64,6 +64,10 @@ Put files in `media/`, then:
 - Text beside a narrow picture (a panel or dialog): `<div class="with-figure"><div>text</div><figure>…</figure></div>`.
 - Dialog screenshots: `<figure class="dialog">` keeps them at their natural size.
 
+- **Replacing a film or picture with a new version of the same name:** raise the number after `?v=`
+  in its link (`media/film_intro.mp4?v=2` → `?v=3`, and the same for its `poster_`).
+  Browsers keep films they have already played; a new number makes them load the new file.
+
 ## Other building blocks
 
 | Purpose | HTML |

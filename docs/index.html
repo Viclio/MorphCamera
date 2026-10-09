@@ -57,7 +57,7 @@
   <p class="lead">You place ordinary cameras where you want the shot to go. The Morph Camera blends between them: <strong>Blend 0</strong> sits on the first camera, <strong>Blend 1</strong> on the last, and every value in between is a smooth move through the others.</p>
   <p>Position, rotation and the lens settings (focal length, sensor size, focus distance, f-stop) are all blended. Animate the Blend value and you have a camera move; change a source camera and the move follows instantly.</p>
   <figure>
-    <video src="media/film_intro.mp4" poster="media/poster_film_intro.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_intro.mp4?v=2" poster="media/poster_film_intro.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>A Motion Camera with Hands Dynamics (Dampen) following a Morph Camera through 6 cameras, with a 20-frame stop on each.</figcaption>
   </figure>
   <p>On top of that, the add-on can:</p>
@@ -190,7 +190,7 @@
     </figure>
   </div>
   <figure>
-    <video src="media/film_morph_interpolation.mp4" poster="media/poster_film_morph_interpolation.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_morph_interpolation.mp4?v=2" poster="media/poster_film_morph_interpolation.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>The same Staggered animation (hold 20 frames) with the four Morph Interpolations.</figcaption>
   </figure>
   <p>The rotation is blended the same way as the position, then rebuilt so the camera never rolls unexpectedly: the view direction is kept and the up direction is rebuilt from it.</p>
@@ -295,7 +295,7 @@
     <figure><img src="media/graph_interp_custom.png" alt="Custom Bezier interpolation curve"><figcaption>Custom Bézier 66%.</figcaption></figure>
   </div>
   <figure>
-    <video src="media/film_interpolation.mp4" poster="media/poster_film_interpolation.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_interpolation.mp4?v=2" poster="media/poster_film_interpolation.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>The four interpolations side by side, hold 20 frames.</figcaption>
   </figure>
   <div class="callout">
@@ -323,7 +323,7 @@
     <figcaption>Back and Ease Out in the dialog.</figcaption>
   </figure>
   <figure>
-    <video src="media/film_easing.mp4" poster="media/poster_film_easing.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_easing.mp4?v=2" poster="media/poster_film_easing.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>Quartic Ease In, Ease Out, Ease In and Out, and Back Ease Out.</figcaption>
   </figure>
 
@@ -336,7 +336,7 @@
     <figure><img src="media/graph_hold_30.png" alt="Hold 30"><figcaption>Hold 30.</figcaption></figure>
   </div>
   <figure>
-    <video src="media/film_hold_frames.mp4" poster="media/poster_film_hold_frames.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_hold_frames.mp4?v=2" poster="media/poster_film_hold_frames.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>Hold 0, 10, 20 and 30 frames.</figcaption>
   </figure>
 
@@ -347,7 +347,7 @@
     <figure><img src="media/graph_stops_on.png" alt="Hold first and last on"><figcaption>On: still at both ends.</figcaption></figure>
   </div>
   <figure>
-    <video src="media/film_stops.mp4" poster="media/poster_film_stops.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_stops.mp4?v=2" poster="media/poster_film_stops.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>Hold First &amp; Last off (left) and on (right).</figcaption>
   </figure>
 </section>
@@ -370,13 +370,13 @@
   <h3 id="stabilizing-object">Stabilizing Object</h3>
   <p>Without an object, "up" is world Z. With one, "up" is the chosen axis of that object, so the horizon follows it. A Morph Camera cannot be used as Stabilizing Object.</p>
   <figure>
-    <video src="media/film_stabilize_object.mp4" poster="media/poster_film_stabilize_object.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_stabilize_object.mp4?v=2" poster="media/poster_film_stabilize_object.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>Left: level with world Z. Right: Stabilizing Object, an empty rocking ±20°; the horizon rocks with it.</figcaption>
   </figure>
   <h3 id="fade">Fade Angle</h3>
   <p>When the camera looks almost straight along "up" (straight down, for example), "level" no longer means anything, and a tiny change of direction would spin the camera. Within the Fade Angle of that direction, Stabilize fades out smoothly instead.</p>
   <figure>
-    <video src="media/film_fade_angle.mp4" poster="media/poster_film_fade_angle.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_fade_angle.mp4?v=2" poster="media/poster_film_fade_angle.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>A path through a camera looking straight down. Left, Fade 0°: the camera whips round. Right, Fade 45°: smooth.</figcaption>
   </figure>
   <div class="callout tip">
@@ -429,7 +429,7 @@
   <p class="lead">The Motion Camera is a second camera that follows another object, its <strong>Base</strong>, as if a camera operator were carrying it: footsteps, head and hand movement, and the lag or bounce of a body following a move.</p>
   <p>The Base can be a Morph Camera, any animated camera or object, or an empty created for it. The two tools stack: a Morph Camera plans the move, a Motion Camera on top of it makes it feel hand-held.</p>
   <figure>
-    <video src="media/film_motion_presets.mp4" poster="media/poster_film_motion_presets.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_motion_presets.mp4?v=2" poster="media/poster_film_motion_presets.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>The four presets on top of the same Morph Camera move (Staggered, hold 20 frames).</figcaption>
   </figure>
   <h3 id="motion-rig">The virtual operator</h3>
@@ -583,7 +583,7 @@
     </figure>
   </div>
   <figure>
-    <video src="media/film_motion_layers.mp4" poster="media/poster_film_motion_layers.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_motion_layers.mp4?v=2" poster="media/poster_film_motion_layers.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>Each layer alone on a still camera: Footsteps, Head Rotation, Camera Rotation, Camera Position.</figcaption>
   </figure>
 </section>
@@ -601,7 +601,7 @@
     </tbody>
   </table>
   <figure>
-    <video src="media/film_motion_dynamics.mp4" poster="media/poster_film_motion_dynamics.jpg" controls muted loop playsinline preload="metadata"></video>
+    <video src="media/film_motion_dynamics.mp4?v=2" poster="media/poster_film_motion_dynamics.jpg?v=2" controls muted loop playsinline preload="metadata"></video>
     <figcaption>The same move without dynamics, with Hands Dampen, with Hands Spring, and with Dampen on all three.</figcaption>
   </figure>
   <figure>
